@@ -190,7 +190,7 @@ function myplugin_save_postdata( $post_id ) {
 add_action( 'wp_trash_post', 'action_woocommerce_trash_order', 10, 1);
 function action_woocommerce_trash_order( $order_id ) {
 	global $wpdb;
-	$order = wc_get_order($order_id);pedido-especial
+	$order = wc_get_order($order_id);
 
 	if($order->status == 'pedido-especial'){
     	$id = strval($order_id);
