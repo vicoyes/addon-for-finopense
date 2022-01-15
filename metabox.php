@@ -12,8 +12,9 @@ function dariobf_metabox() {
 
 
 function trusted_list_order_meta_box_content( $order_id ){ 
-    global $wpdb;
-		
+   global $wpdb;
+
+	
 		
 	//echo $order_id->ID;
 	
@@ -49,6 +50,7 @@ foreach($enabled_gateways as $index => $enabled_gateway){
 	}
 	
 ?>
+<p><b>Cuenta Origen:</b></p>
 <select name="reserva_fun" id="reserva_fun">
 	<option value="nulo" name="no_select_payment">Selecciona una opcion<option>
 	<?php
@@ -60,13 +62,57 @@ foreach($enabled_gateways as $index => $enabled_gateway){
 	
 // obtiene los datos de pedido		
 $order = wc_get_order( $order_id->ID);
+echo $order->status;
+$date=strtotime($order->date_created);
+$total = $order->total;
 
-$registros = $wpdb->get_row("SELECT * FROM `fin_costs` WHERE coid = $order->id ");
-//echo $registros;
+$items_name=[];
+$items = $order->get_items();
 
-if($registros){
+foreach($items as $item){
+		$items_name[] = $item['name'];
+	}
+//echo gettype($items_name[0]);
+$pre_name = $items_name[0];
+$name;	
+	if($pre_name == NULL){
+		$name = 'No tiene producto - Pedido Especial';
+	}else{
+		$name = $pre_name.' - Pedido Especial';
+	}
+	
+//obtiene el valor select
+$id = strval($order->id);	
+	
+// crea el registro en la base de datos	
+if (isset($_POST)){
+
+
+
+	
+	if($order->status == 'pedido-especial'){
+		$copy = array();
+        $copy['coid'] = $id;
+        $copy['siteid'] = 0;
+        $copy['cat'] = 'pedido-especial';
+        $copy['amount'] = $total;
+        $copy['tr'] = 0.00;
+        $copy['datepaid'] = $date;
+        $copy['timecr'] = $date;
+        $copy['vid'] = 0;
+        $copy['paidwith'] = $order->get_meta('reserva');
+        $copy['items'] = 0;
+        $copy['name'] = $name;
+        $copy['notes'] = $order->get_meta();
+	
+	$wpdb->insert('fin_costs', $copy);
+	
+	}
+	
+	$registros = $wpdb->get_row("SELECT * FROM `fin_costs` WHERE coid = $order->id ");
+	if($registros){
  ?>	
-<table style="width: 100%; text-align: center;">
+<table style="width: 100%; text-align: center; background: #efefef;">
 	<p><b>Datos Pedido reservar</b></p>	
 <thead>
   <tr>
@@ -100,56 +146,9 @@ if($registros){
 	  </td>
   </tr>
 </tbody>
-</table>	
+</table>
 <?php	
 }
-
-
-	
-$date=strtotime($order->date_created);
-$total = $order->total;
-
-$items_name=[];
-$items = $order->get_items();
-
-foreach($items as $item){
-		$items_name[] = $item['name'];
-	}
-//echo gettype($items_name[0]);
-$pre_name = $items_name[0];
-$name;	
-	if($pre_name == NULL){
-		$name = 'No tiene producto - Pedido Especial';
-	}else{
-		$name = $pre_name.' - Pedido Especial';
-	}
-	
-//obtiene el valor select
-$id = strval($order->id);	
-	
-// crea el registro en la base de datos	
-if (isset($_POST)){
-	
-	
-	
-	if($order->status == 'pedido-especial'){
-		$copy = array();
-        $copy['coid'] = $id;
-        $copy['siteid'] = 0;
-        $copy['cat'] = 'pedido-especial';
-        $copy['amount'] = $total;
-        $copy['tr'] = 0.00;
-        $copy['datepaid'] = $date;
-        $copy['timecr'] = $date;
-        $copy['vid'] = 0;
-        $copy['paidwith'] = $order->get_meta('reserva');
-        $copy['items'] = 0;
-        $copy['name'] = $name;
-        $copy['notes'] = $order->get_meta();
-	
-	$wpdb->insert('fin_costs', $copy);
-	
-	}
 	
 
   }		   	
@@ -187,6 +186,21 @@ function myplugin_save_postdata( $post_id ) {
   $order->save();
 }
 
+// Borrar gastos al borrar order woocommerce_trash_order
+add_action( 'wp_trash_post', 'action_woocommerce_trash_order', 10, 1);
+function action_woocommerce_trash_order( $order_id ) {
+	global $wpdb;
+	$order = wc_get_order($order_id);pedido-especial
+
+	if($order->status == 'pedido-especial'){
+    	$id = strval($order_id);
+    	$table = 'fin_costs';
+   		$wpdb->delete( $table, array( 'coid' => $id ) );
+	}
+
+}; 
+         
+// add the action 
 
 
 
