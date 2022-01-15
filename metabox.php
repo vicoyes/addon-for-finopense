@@ -50,18 +50,63 @@ foreach($enabled_gateways as $index => $enabled_gateway){
 	
 ?>
 <select name="reserva_fun" id="reserva_fun">
+	<option value="nulo" name="no_select_payment">Selecciona una opcion<option>
 	<?php
 	   echo $html
 	?>
 </select>
 <?php
 
+	
 // obtiene los datos de pedido		
 $order = wc_get_order( $order_id->ID);
-echo print_r($html);
 
+$registros = $wpdb->get_row("SELECT * FROM `fin_costs` WHERE coid = $order->id ");
+//echo $registros;
+
+if($registros){
+ ?>	
+<table style="width: 100%; text-align: center;">
+	<p><b>Datos Pedido reservar</b></p>	
+<thead>
+  <tr>
+    <th>ID:</th>
+    <th>Fecha:</th>
+    <th>Monto:</th>
+    <th>Medio:</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>
+	  <?php
+	   echo $registros->coid;
+	?>
+	  </td>
+    <td>
+	  <?php
+	   echo gmdate("Y-m-d", $registros->datepaid);
+	  ?>
+	  </td>
+    <td>
+	  <?php
+	   echo $registros->amount;
+	  ?>
+	  </td>
+    <td>
+	   <?php
+	   echo $registros->paidwith;
+	  ?>
+	  </td>
+  </tr>
+</tbody>
+</table>	
+<?php	
+}
+
+
+	
 $date=strtotime($order->date_created);
-$id = strval($order->id);
 $total = $order->total;
 
 $items_name=[];
@@ -80,44 +125,83 @@ $name;
 	}
 	
 //obtiene el valor select
-	
+$id = strval($order->id);	
 	
 // crea el registro en la base de datos	
 if (isset($_POST)){
+	
+	
+	
 	if($order->status == 'pedido-especial'){
 		$copy = array();
         $copy['coid'] = $id;
         $copy['siteid'] = 0;
-        $copy['cat'] = 'inventory';
+        $copy['cat'] = 'pedido-especial';
         $copy['amount'] = $total;
         $copy['tr'] = 0.00;
         $copy['datepaid'] = $date;
         $copy['timecr'] = $date;
         $copy['vid'] = 0;
-        $copy['paidwith'] = $medio_pago_p;
+        $copy['paidwith'] = $order->get_meta('reserva');
         $copy['items'] = 0;
         $copy['name'] = $name;
-        $copy['notes'] = $order->status;
+        $copy['notes'] = $order->get_meta();
 	
 	$wpdb->insert('fin_costs', $copy);
 	
 	}
+	
 
-}		   	
+  }		   	
 
 }
+
+
+add_action( 'save_post', 'myplugin_save_postdata' );
+function myplugin_save_postdata( $post_id ) {
+	$order = wc_get_order($post_id);
+
+  // If this is an autosave, our form has not been submitted, so we don't want to do anything.
+  if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
+      return $post_id;
+
+  // Check the user's permissions. If want
+  if ( 'page' == $_POST['post_type'] ) {
+
+    if ( ! current_user_can( 'edit_page', $post_id ) )
+        return $post_id;
+
+  } else {
+
+    if ( ! current_user_can( 'edit_post', $post_id ) )
+        return $post_id;
+  }
+
+
+  // Sanitize user input. if you want
+  $mydata = sanitize_text_field( $_POST['reserva_fun'] );
+
+  // Update the meta field in the database.
+ 	
+  $order->update_meta_data( 'reserva',$mydata );
+  $order->save();
+}
+
+
+
+
 
 
 
 add_action( 'add_meta_boxes', 'dariobf_metabox' );
 add_action( 'init', function() {
-    register_post_status( 'wc-en-fabricacion', array(
+    register_post_status( 'wc-pedido-especial', array(
         'label'                     => 'Pedido Especial',
         'public'                    => true,
         'exclude_from_search'       => false,
         'show_in_admin_all_list'    => true,
         'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop( 'En fabricación <span class="count">(%s)</span>', 'En fabricación <span class="count">(%s)</span>'),
+        'label_count'               => _n_noop( 'Pedido Especial <span class="count">(%s)</span>', 'Pedido Especial <span class="count">(%s)</span>'),
     ) );
 }, 10 );
  
@@ -126,16 +210,3 @@ add_filter ( 'wc_order_statuses', function( $estados ) {
     return $estados;
 }, 10, 1 );
 
-// dibuja el elemento	
-//echo '<li class="wide">';	
-/*echo   '<select name="reserva_fun" id="reserva_fun">
-<option value="destiempo">Selecione la cuenta origen</option>';	
-foreach($enabled_gateways as $index => $enabled_gateway){
-	
-	$html_string ='<option value="'.$values_key[$index].'">'.$enabled_gateway.'</option>';
-	echo $html_string;
-}
-
-echo '</select>';
-echo '<button type="submit" class="button save_order button-primary" name="reserva" value="reserva" id="cuenta">Tomar de la Reserva</button>';	
-//echo '</li>';*/
