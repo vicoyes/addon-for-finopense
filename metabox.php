@@ -50,6 +50,7 @@ foreach($enabled_gateways as $index => $enabled_gateway){
 	}
 	
 ?>
+<label><input type="checkbox" id="pedido_reserva" value="pedido_reserva" name="pedido_reserva" > Tomar de la Reserva</label><br>
 <p><b>Cuenta Origen:</b></p>
 <select name="reserva_fun" id="reserva_fun">
 	<option value="nulo" name="no_select_payment">Selecciona una opcion<option>
@@ -62,7 +63,7 @@ foreach($enabled_gateways as $index => $enabled_gateway){
 	
 // obtiene los datos de pedido		
 $order = wc_get_order( $order_id->ID);
-echo $order->status;
+
 $date=strtotime($order->date_created);
 $total = $order->total;
 
@@ -80,17 +81,26 @@ $name;
 	}else{
 		$name = $pre_name.' - Pedido Especial';
 	}
+
+	
 	
 //obtiene el valor select
 $id = strval($order->id);	
+$check_reserva = $order->get_meta('check_reserva');
+//echo $check_reserva;
+if($check_reserva == 'pedido_reserva'){
+	echo "<script>document.querySelector('#pedido_reserva').checked=true </script>";
+}else{
+	echo "<script>document.querySelector('#pedido_reserva').checked=false </script>";
 	
-// crea el registro en la base de datos	
+}	
+		
 if (isset($_POST)){
 
 
 
 	
-	if($order->status == 'pedido-especial'){
+	if($check_reserva == 'pedido_reserva'){
 		$copy = array();
         $copy['coid'] = $id;
         $copy['siteid'] = 0;
@@ -102,8 +112,8 @@ if (isset($_POST)){
         $copy['vid'] = 0;
         $copy['paidwith'] = $order->get_meta('reserva');
         $copy['items'] = 0;
-        $copy['name'] = $name;
-        $copy['notes'] = $order->get_meta();
+        $copy['name'] =$name;
+        $copy['notes'] ="Order ID: ".$id;
 	
 	$wpdb->insert('fin_costs', $copy);
 	
@@ -179,10 +189,12 @@ function myplugin_save_postdata( $post_id ) {
 
   // Sanitize user input. if you want
   $mydata = sanitize_text_field( $_POST['reserva_fun'] );
+  $reserva = sanitize_text_field( $_POST['pedido_reserva'] );
 
   // Update the meta field in the database.
  	
   $order->update_meta_data( 'reserva',$mydata );
+  $order->update_meta_data( 'check_reserva',$reserva );
   $order->save();
 }
 
@@ -192,11 +204,11 @@ function action_woocommerce_trash_order( $order_id ) {
 	global $wpdb;
 	$order = wc_get_order($order_id);
 
-	if($order->status == 'pedido-especial'){
+	
     	$id = strval($order_id);
     	$table = 'fin_costs';
    		$wpdb->delete( $table, array( 'coid' => $id ) );
-	}
+	
 
 }; 
          
@@ -208,7 +220,7 @@ function action_woocommerce_trash_order( $order_id ) {
 
 
 add_action( 'add_meta_boxes', 'dariobf_metabox' );
-add_action( 'init', function() {
+/*add_action( 'init', function() {
     register_post_status( 'wc-pedido-especial', array(
         'label'                     => 'Pedido Especial',
         'public'                    => true,
@@ -222,5 +234,5 @@ add_action( 'init', function() {
 add_filter ( 'wc_order_statuses', function( $estados ) {
     $estados['wc-pedido-especial'] = 'Pedido Especial';
     return $estados;
-}, 10, 1 );
+}, 10, 1 );*/
 
