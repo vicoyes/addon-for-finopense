@@ -89,10 +89,14 @@ $id = strval($order->id);
 $check_reserva = $order->get_meta('check_reserva');
 //echo $check_reserva;
 if($check_reserva == 'pedido_reserva'){
-	echo "<script>document.querySelector('#pedido_reserva').checked=true </script>";
+	echo "<script>document.querySelector('#pedido_reserva').checked=true; document.querySelector('#pedido_reserva').disabled=true </script>";
 }else{
 	echo "<script>document.querySelector('#pedido_reserva').checked=false </script>";
 	
+}	
+
+if($order->get_meta('reserva')!= 'nulo'){
+	echo "<script>document.querySelector('#reserva_fun').disabled = true; document.querySelector('#reserva_fun').value='".$order->get_meta('reserva')."';</script>";
 }	
 		
 if (isset($_POST)){
@@ -169,7 +173,7 @@ if (isset($_POST)){
 add_action( 'save_post', 'myplugin_save_postdata' );
 function myplugin_save_postdata( $post_id ) {
 	$order = wc_get_order($post_id);
-
+$order->get_meta('reserva');
   // If this is an autosave, our form has not been submitted, so we don't want to do anything.
   if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
       return $post_id;
@@ -188,7 +192,7 @@ function myplugin_save_postdata( $post_id ) {
 
 
   // Sanitize user input. if you want
-  $mydata = sanitize_text_field( $_POST['reserva_fun'] );
+  $mydata = sanitipedido_reservaze_text_field( $_POST['reserva_fun'] );
   $reserva = sanitize_text_field( $_POST['pedido_reserva'] );
 
   // Update the meta field in the database.
