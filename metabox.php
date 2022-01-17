@@ -35,14 +35,14 @@ if( $gates ) {
 $values_key = array_keys($id_gateways);	
 
 $medio_pago = isset( $values['reserva_fun'] ) ? esc_attr( $values['reserva_fun'][0] ) : '';
-$medio_pago_p;
+/*$medio_pago_p;
 	if($medio_pago == ""){
 		$medio_pago_p='cod';
 	}else{
 		$medio_pago_p='no vacio';
-	}
+	}*/
 	
-$html;
+$html="";
 	
 foreach($enabled_gateways as $index => $enabled_gateway){
 	   $html_string ='<option value="'.$values_key[$index].'"'.selected($medio_pago,$values_key[$index]).'>'.$enabled_gateway.'</option>';
@@ -95,9 +95,9 @@ if($check_reserva == 'pedido_reserva'){
 	
 }	
 
-if($order->get_meta('reserva')!= 'nulo'){
+/*if($order->get_meta('reserva')!= 'nulo'){
 	echo "<script>document.querySelector('#reserva_fun').disabled = true; document.querySelector('#reserva_fun').value='".$order->get_meta('reserva')."';</script>";
-}	
+}*/	
 		
 if (isset($_POST)){
 
@@ -127,7 +127,7 @@ if (isset($_POST)){
 	if($registros){
  ?>	
 <table style="width: 100%; text-align: center; background: #efefef;">
-	<p><b>Datos Pedido reservar</b></p>	
+	<p><b>Datos Gasto Reservar</b></p>	
 <thead>
   <tr>
     <th>ID:</th>
@@ -172,10 +172,10 @@ if (isset($_POST)){
 
 add_action( 'save_post', 'myplugin_save_postdata' );
 function myplugin_save_postdata( $post_id ) {
-	$order = wc_get_order($post_id);
+$order = wc_get_order($post_id);
 $order->get_meta('reserva');
   // If this is an autosave, our form has not been submitted, so we don't want to do anything.
-  if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
+ if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
       return $post_id;
 
   // Check the user's permissions. If want
@@ -192,7 +192,7 @@ $order->get_meta('reserva');
 
 
   // Sanitize user input. if you want
-  $mydata = sanitipedido_reservaze_text_field( $_POST['reserva_fun'] );
+  $mydata = sanitize_text_field( $_POST['reserva_fun'] );
   $reserva = sanitize_text_field( $_POST['pedido_reserva'] );
 
   // Update the meta field in the database.
